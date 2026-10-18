@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { createContext, useContext, useEffect, useState } from "react";
 import {
+  Link,
+  useLocation,
   Navigate,
   NavLink,
   Route,
@@ -28,6 +30,7 @@ import {
   TeamsPage,
 } from "./pages";
 import type { Access, User } from "./types";
+import { AdminSignupPage } from "./pages/AdminSignupPage";
 import { UsersPage } from "./pages/UsersPage";
 type AuthValue = {
   user: User;
@@ -42,6 +45,7 @@ export const useAuth = () => {
   return context;
 };
 function Login({ onLogin }: { onLogin: () => void }) {
+  const location = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -68,6 +72,11 @@ function Login({ onLogin }: { onLogin: () => void }) {
         <div className="brand-mark">R</div>
         <h1>Welcome to Relay</h1>
         <p>Sign in to your operations workspace.</p>
+        {location.state?.signupComplete && (
+          <p role="status">
+            Your admin account is ready. Sign in with your new credentials.
+          </p>
+        )}
         <label>
           Email
           <input
@@ -96,6 +105,9 @@ function Login({ onLogin }: { onLogin: () => void }) {
         <button className="primary full" disabled={busy}>
           {busy ? "Signing in…" : "Sign in"}
         </button>
+        <p>
+          <Link to="/signup">Create an admin account</Link>
+        </p>
       </form>
     </div>
   );
@@ -266,6 +278,12 @@ export default function App() {
   }, [qc]);
   return (
     <Routes>
+      <Route
+        path="/signup"
+        element={
+          loggedIn ? <Navigate to="/attention" replace /> : <AdminSignupPage />
+        }
+      />
       <Route
         path="/login"
         element={

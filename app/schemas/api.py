@@ -1,6 +1,6 @@
 from datetime import datetime
 from uuid import UUID
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
 import re
 from typing import Generic, Literal, TypeVar
 
@@ -206,3 +206,25 @@ class ApprovalSummary(ApprovalOut):
     requester_name: str
     team_id: UUID
     can_decide: bool
+
+
+class AdminSignup(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    full_name: str = Field(min_length=1, max_length=200)
+    email: str
+    password: str = Field(min_length=12, max_length=1024)
+    team_name: str = Field(min_length=1, max_length=120)
+    signup_key: SecretStr
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, value):
+        return Login.normalize_email(value)
+
+    @field_validator("full_name", "team_name")
+    @classmethod
+    def trim_name(cls, value):
+        value = value.strip()
+        if not value:
+            raise ValueError("Name cannot be blank")
+        return value

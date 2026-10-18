@@ -8,3 +8,9 @@ frontend/node_modules
 frontend/dist
 frontend/test-results
 frontend/playwright-report
+
+# Inject credentials at runtime; do not bake them into images.
+.env
+**/.env
+.env.local
+**/.env.local

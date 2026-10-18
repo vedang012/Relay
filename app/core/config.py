@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_minutes: int = 60
     frontend_origin: str = "http://localhost:5173"
+    admin_signup_key: str = ""
     groq_api_key: str = ""
     groq_model: str = "openai/gpt-oss-120b"
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")

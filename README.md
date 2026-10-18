@@ -13,6 +13,7 @@ For an interview walkthrough, module explanations, trade-offs, and practice ques
 - [Prerequisites](#prerequisites)
 - [Quick start: Docker backend](#quick-start-docker-backend)
 - [Alternative: local Python backend](#alternative-local-python-backend)
+- [Production administrator signup](#production-administrator-signup)
 - [Configuration](#configuration)
 - [Users, teams, and permissions](#users-teams-and-permissions)
 - [Working with issues](#working-with-issues)
@@ -32,6 +33,7 @@ For an interview walkthrough, module explanations, trade-offs, and practice ques
 | Page          | Route        | What it provides                                                                                                                                          |
 | ------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Sign in       | `/login`     | Email/password authentication.                                                                                                                            |
+| Admin signup  | `/signup`    | Create a workspace administrator and initial team using a private deployment signup code.                                                                 |
 | Attention     | `/attention` | Issues that are overdue, blocked, unassigned, or awaiting approval.                                                                                       |
 | All Work      | `/work`      | Search, filters, sorting, pagination, and issue creation.                                                                                                 |
 | Bookmarks     | `/bookmarks` | The signed-in user's saved issues, with search and filters.                                                                                               |
@@ -233,6 +235,22 @@ If an existing virtual environment was created with `uv` and has no pip, install
 uv pip install --python .venv/bin/python -r requirements.txt
 ```
 
+## Production administrator signup
+
+Production does not need the development administrator or `DEV_ADMIN_PASSWORD`. Administrators choose their own email and password through **Create an admin account** on the sign-in page (`/signup`).
+
+Relay currently has one shared workspace. Signup therefore requires a **private deployment signup code**; it is not unrestricted public registration and does not create an isolated tenant. Every account created through this flow receives workspace-wide ADMIN permissions and an initial team membership. Share the code only with people authorized to administer the entire deployment.
+
+1. Set `ADMIN_SIGNUP_KEY` in the backend environment to a random secret of at least 32 characters. Generate one with `python3 -c 'import secrets; print(secrets.token_urlsafe(48))'`.
+2. Start the API with migrations applied. For Compose, run `docker compose up -d --build api` after installing this feature, or `docker compose up -d api` after changing only the environment.
+3. Open `/signup` from **Create an admin account** on the sign-in page.
+4. Enter full name, email, a password of at least 12 characters, confirmation, a new initial team name, and the private signup code.
+5. After creation, sign in with the new account. The account can manage users and its initial team's work immediately.
+
+The endpoint provisions the shared role/permission catalog if necessary, the account, global ADMIN grant, team, and active membership in one transaction. It does not create `admin@example.test` or the development example team. Existing emails/team names are rejected without partially creating records. Signup is disabled when `ADMIN_SIGNUP_KEY` is empty or shorter than 32 characters. Clear it and recreate the API to close registration; existing admins can create further users/admins through Users.
+
+The signup key stays server-side and is entered only into the signup form. It is not a `VITE_*` setting, JWT secret, or account password. The form does not store signup credentials in browser storage. There is no email verification or password recovery yet.
+
 ## Configuration
 
 ### Backend: root `.env`
@@ -246,12 +264,13 @@ uv pip install --python .venv/bin/python -r requirements.txt
 | `JWT_ALGORITHM`        | Signing algorithm; application default `HS256`.                                                                                |
 | `ACCESS_TOKEN_MINUTES` | Access token lifetime; application default `60`.                                                                               |
 | `FRONTEND_ORIGIN`      | Exact permitted browser origin; default `http://localhost:5173`.                                                               |
+| `ADMIN_SIGNUP_KEY`     | Optional private admin registration code, at least 32 characters. Empty/short values disable signup.                           |
 | `GROQ_API_KEY`         | Optional server-side Groq key. Empty means summaries are unavailable.                                                          |
 | `GROQ_MODEL`           | Model sent to Groq; default `openai/gpt-oss-120b`.                                                                             |
 | `DEV_ADMIN_PASSWORD`   | Shell environment variable read by the explicit development seed, not by normal API startup. Minimum 12 characters.            |
 | `TEST_DATABASE_URL`    | Disposable database URL used by backend tests; database name must end in `_test`.                                              |
 
-For host-run FastAPI, environment variables override `.env` settings. Compose explicitly passes `DATABASE_URL`, `JWT_SECRET`, `FRONTEND_ORIGIN`, `GROQ_API_KEY`, and `GROQ_MODEL` to the API. Add any further runtime overrides, such as token lifetime, to the Compose service environment when deploying.
+For host-run FastAPI, environment variables override `.env` settings. Compose passes database, JWT, token-lifetime, admin-signup, frontend-origin, and Groq settings to the API environment. Local `.env` files are excluded from the Docker build context; inject secrets at runtime.
 
 ### Frontend: `frontend/.env`
 
@@ -284,7 +303,7 @@ A PostgreSQL volume keeps its original database credentials. Changing `POSTGRES_
 
 Email addresses are normalized to lowercase and trimmed. Duplicate emails return a conflict. The user directory supports search and pagination and displays role scope and account status. Passwords and password hashes are not returned in the directory.
 
-There is currently no public signup, invitation email, password reset, or forced initial-password change.
+There is no unrestricted public signup. Administrators can use the deployment-code signup flow; employees are created by admins. Invitation email, password reset, and forced initial-password changes are not implemented.
 
 ### Role capabilities
 
@@ -462,6 +481,15 @@ Use Swagger UI at `/docs` for the complete request and response schemas.
 | `POST` | `/teams`                       | Create a team and add the creator's membership; global `team:manage` required. |
 | `GET`  | `/teams/{team_id}/members`     | Active accounts with active membership in a readable team.                     |
 | `POST` | `/teams/{team_id}/memberships` | Add/reactivate membership; requires that team's `team:manage`.                 |
+
+Admin registration endpoints:
+
+| Method | Path                   | Purpose                                                                               |
+| ------ | ---------------------- | ------------------------------------------------------------------------------------- |
+| `GET`  | `/auth/signup-options` | Public availability flag; never returns the signup key.                               |
+| `POST` | `/auth/signup`         | Create a workspace admin and initial team after validating the deployment signup key. |
+
+Signup input: `full_name`, `email`, `password`, `team_name`, `signup_key`. A successful response is the public user representation (`201`); sign in separately to get a token. Disabled signup returns `503`, invalid code returns `403`, and duplicate email/team returns `409`. Callers cannot select another role or an existing team through this endpoint.
 
 ### Issues and collaboration
 
@@ -661,7 +689,7 @@ The included Compose setup is a local development baseline. For a deployed envir
 - Set `FRONTEND_ORIGIN` to the exact deployed frontend origin, including its scheme and port where applicable.
 - Use HTTPS, runtime secrets, deliberate account provisioning, database backups, and appropriate network access controls.
 - Apply migrations as a controlled deployment step. The Compose command applies them automatically; the standalone Dockerfile's default command starts Uvicorn without migrations.
-- The current Dockerfile copies the repository, and `.dockerignore` does not exclude the root `.env`. Account for this before building distributable images with local secrets present; use a secret-safe build context and runtime configuration.
+- The Docker build excludes root/frontend `.env` and `.env.local` files. Supply deployment secrets through runtime configuration; keep any other secret files out of the build context as well.
 - The frontend is not served by FastAPI or included as a separate Compose service. Host it independently.
 
 The browser stores its access token in `sessionStorage` and clears authentication/cache state on logout or a 401 response. Tokens are accessible to JavaScript; there are no HttpOnly cookie sessions, refresh tokens, or server-side logout/revocation endpoint.
@@ -697,7 +725,11 @@ Confirm the API is responding on port 8000, `VITE_API_BASE_URL` ends in `/api/v1
 
 ### No account can sign in
 
-Startup does not create users. Bootstrap a new development database with the seed, or sign in with an existing account. Re-running the seed does not reset an existing password. Expired tokens require signing in again.
+Startup does not create users. Use protected admin signup in production, bootstrap a new development database with the seed, or sign in with an existing account. Re-running the seed does not reset an existing password. Expired tokens require signing in again.
+
+### Admin signup is disabled
+
+Set a random `ADMIN_SIGNUP_KEY` of at least 32 characters in the backend environment and recreate the API. Use its value as the form’s signup code. Do not use `DEV_ADMIN_PASSWORD` as the code; that variable is for the local development seed only.
 
 ### Users is missing from navigation
 
@@ -761,7 +793,7 @@ README.md
 
 ## Current limitations
 
-- No public registration, email invitations, password recovery, password-change workflow, or existing-user role editing API/UI.
+- No unrestricted public registration, email invitations, password recovery, password-change workflow, or existing-user role editing API/UI. Admin signup requires a private deployment code.
 - No application rate limiting, refresh tokens, server-side token revocation, or automated idempotency-key cleanup.
 - No comment editing/deletion, attachments, mentions, watchers, or notifications.
 - No approval cancellation endpoint, decision notes, request-more-information action, or automatic payment execution.

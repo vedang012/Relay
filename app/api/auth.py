@@ -1,14 +1,18 @@
+from secrets import compare_digest
 from uuid import UUID
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, or_, select, text
 from sqlalchemy.orm import Session
 from app.api.deps import current_user
 from app.core.errors import error
+from app.core.config import get_settings
+from app.services.role_catalog import ensure_role_catalog
 from app.core.security import issue_token, verify_password, hash_password
 from app.db.session import get_db
 from app.models import Role, Team, User, UserRole, Membership, RolePermission
 from app.schemas.api import (
     AccessOut,
+    AdminSignup,
     Login,
     MemberList,
     TeamList,
@@ -88,6 +92,62 @@ def list_users(
         "page": page,
         "page_size": page_size,
     }
+
+
+@router.get("/auth/signup-options")
+def signup_options():
+    return {"enabled": len(get_settings().admin_signup_key.strip()) >= 32}
+
+
+@router.post("/auth/signup", response_model=UserOut, status_code=201)
+def signup_admin(body: AdminSignup, db: Session = Depends(get_db)):
+    expected = get_settings().admin_signup_key.strip()
+    if len(expected) < 32:
+        raise error(
+            503,
+            "signup_disabled",
+            "Admin signup is disabled. Ask the deployment operator to configure ADMIN_SIGNUP_KEY.",
+        )
+    if not compare_digest(
+        body.signup_key.get_secret_value().strip().encode(), expected.encode()
+    ):
+        raise error(403, "invalid_signup_key", "Invalid admin signup code.")
+    # Serialize provisioning of the shared catalog and concurrent signup checks.
+    db.execute(text("SELECT pg_advisory_xact_lock(7240918301)"))
+    if db.scalar(select(User.id).where(User.email == body.email)):
+        raise error(
+            409,
+            "duplicate_email",
+            "An account with this email already exists. Sign in instead.",
+        )
+    if db.scalar(select(Team.id).where(Team.name == body.team_name)):
+        raise error(
+            409,
+            "duplicate_team",
+            "A team with this name already exists. Choose another name.",
+        )
+    try:
+        ensure_role_catalog(db)
+        admin_role = db.scalar(select(Role).where(Role.code == "ADMIN"))
+        account = User(
+            full_name=body.full_name,
+            email=body.email,
+            password_hash=hash_password(body.password),
+        )
+        team = Team(name=body.team_name, description="")
+        db.add_all([account, team])
+        db.flush()
+        db.add(UserRole(user_id=account.id, role_id=admin_role.id, team_id=None))
+        db.add(Membership(user_id=account.id, team_id=team.id))
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise error(
+            409,
+            "signup_conflict",
+            "Email or team name already exists. Review your details and try again.",
+        ) from None
+    return account
 
 
 @router.post("/auth/login")

@@ -6,16 +6,16 @@ The React application lives in `frontend/` and uses the existing FastAPI service
 
 Stitch project: `7008576518719428821` (Relay Operational Work Management). All six available HTML exports and the five page screenshots were retrieved through Stitch MCP. The current screens use a white sidebar, Inter typography, JetBrains Mono identifiers, slate surfaces, compact tables, and teal actions.
 
-| Screen | Stitch screen ID | API contracts |
-| --- | --- | --- |
-| Attention Queue | `f326ecdee98442a98bd8cfb791edde99` | `GET /dashboard/attention`, `GET /teams`, `GET /teams/{id}/members` |
-| All Work | `d7322c7e44434ba2954ebf5dda03ff83` | `GET /work-items` with server search, filters, sort, and pagination |
-| Work Item Detail | `7262c17fdf224a12a4961f9840636878` | `GET/PATCH /work-items/{id}`, activity, transitions, assignment creation/removal, `POST /approvals` |
-| Approvals | `7f7da90111244de7b88fe17a03c58476` | `GET /approvals`, `GET /approvals/{id}`, `POST /approvals/{id}/decision` |
-| Teams and creation modal | `c8c0716fe13447e6a3dc3c1c3b9256aa` | Teams, members, server work counts, `POST /teams`, `POST /work-items`, optional owner assignment |
-| Platform shell / Attention variant | `3cb8b049166941658e331e47a0662084` | Shared navigation and table reference |
-| Authentication | No separate Stitch login screen exposed | `POST /auth/login`, `GET /auth/me`, `GET /auth/access` |
-| Users / Create User | New requested page using existing Relay styles and controls | `GET /users`, `GET /roles`, `GET /teams`, `POST /users` |
+| Screen                             | Stitch screen ID                                            | API contracts                                                                                       |
+| ---------------------------------- | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Attention Queue                    | `f326ecdee98442a98bd8cfb791edde99`                          | `GET /dashboard/attention`, `GET /teams`, `GET /teams/{id}/members`                                 |
+| All Work                           | `d7322c7e44434ba2954ebf5dda03ff83`                          | `GET /work-items` with server search, filters, sort, and pagination                                 |
+| Work Item Detail                   | `7262c17fdf224a12a4961f9840636878`                          | `GET/PATCH /work-items/{id}`, activity, transitions, assignment creation/removal, `POST /approvals` |
+| Approvals                          | `7f7da90111244de7b88fe17a03c58476`                          | `GET /approvals`, `GET /approvals/{id}`, `POST /approvals/{id}/decision`                            |
+| Teams and creation modal           | `c8c0716fe13447e6a3dc3c1c3b9256aa`                          | Teams, members, server work counts, `POST /teams`, `POST /work-items`, optional owner assignment    |
+| Platform shell / Attention variant | `3cb8b049166941658e331e47a0662084`                          | Shared navigation and table reference                                                               |
+| Authentication                     | No separate Stitch login screen exposed                     | `POST /auth/login`, `GET /auth/me`, `GET /auth/access`                                              |
+| Users / Create User                | New requested page using existing Relay styles and controls | `GET /users`, `GET /roles`, `GET /teams`, `POST /users`                                             |
 
 All API paths above have the `/api/v1` prefix. Frontend routes are `/attention`, `/work`, `/work/:id`, `/approvals`, `/teams`, `/users`, and `/login`.
 
@@ -89,4 +89,4 @@ Only users with a global `user:manage` grant can see **Users** or open its page.
 
 Create User collects a name, email, initial password, role, and team. Team-required roles cannot submit without a team. The existing administrator role allows a blank team for workspace-wide permissions or a selected team for a team-scoped grant; the form explains this distinction. Successful creation refreshes the directory and team members and clears the password from the form. Duplicate-email errors preserve inputs for correction. A synchronous submit guard prevents overlapping requests; the submitted payload is captured before the request begins. Credentials are not stored in query variables, URLs, logs, or browser storage.
 
-Initial workspace setup still requires an administrator and seeded roles. Public registration, invitation delivery, password recovery, and modification of existing accounts are outside this onboarding flow.
+Initial workspace setup still requires an administrator and seeded roles. Unrestricted public registration, invitation delivery, password recovery, and modification of existing accounts are outside this onboarding flow. `/signup` separately supports administrator registration using a private deployment code, with transactional role-catalog/account/team provisioning and a return to sign in.

@@ -133,7 +133,20 @@ export type IssueSummary = {
   max_words: number;
   context_note: string;
 };
+export type AdminSignupInput = {
+  full_name: string;
+  email: string;
+  password: string;
+  team_name: string;
+  signup_key: string;
+};
 export const api = {
+  signupOptions: () => request<{ enabled: boolean }>("/auth/signup-options"),
+  signupAdmin: (body: AdminSignupInput) =>
+    request<User>("/auth/signup", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
   bookmark: (id: string) =>
     request<{ bookmarked: boolean }>(`/work-items/${id}/bookmark`),
   setBookmark: (id: string, saved: boolean) =>
