@@ -143,7 +143,7 @@ This separates account administration from business decision authority. It is an
 
 The administrator loads backend-provided role options and available teams, enters account details, and creates a user. The backend hashes the password, inserts a user, assigns a role, and optionally creates active membership within one transaction. Duplicate email constraints prevent duplicate accounts. The frontend has a synchronous submission guard and preserves fields when an error needs correction.
 
-New accounts are immediately usable. There is no unrestricted public signup, email invitation, account approval phase, or password recovery. Production admins can register using a private deployment signup code; that transaction provisions the catalog, global admin grant, initial team, and membership. Creating an ADMIN without a team gives a global grant but no automatic membership from that operation. The development seed adds membership separately. Protected admin signup also creates an initial team and membership.
+New accounts are immediately usable. There is no general public signup, email invitation, account approval phase, or password recovery. Production admins can register using a private deployment signup code; that transaction provisions the catalog, global admin grant, initial team, and membership. The demo intentionally displays its signup code, so any visitor can create an administrator there. Creating an ADMIN without a team gives a global grant but no automatic membership from that operation. The development seed adds membership separately. Protected admin signup also creates an initial team and membership.
 
 ### B. Teams and membership
 

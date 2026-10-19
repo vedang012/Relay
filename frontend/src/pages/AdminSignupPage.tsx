@@ -4,6 +4,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { Feedback } from "../ui";
 
+const demoSignupCode = import.meta.env.VITE_DEMO_ADMIN_SIGNUP_KEY?.trim();
+
 export function AdminSignupPage() {
   const navigate = useNavigate();
   const options = useQuery({
@@ -85,6 +87,23 @@ export function AdminSignupPage() {
             Admin signup is disabled. Ask the deployment operator to enable it
             with ADMIN_SIGNUP_KEY.
           </p>
+        )}
+        {options.data?.enabled && demoSignupCode && (
+          <div className="demo-signup-code">
+            <p>
+              <strong>Demo admin signup code</strong>
+            </p>
+            <code>{demoSignupCode}</code>
+            <p>
+              This code is visible for this demo so visitors can try admin
+              signup. In a normal deployment, the code stays private and is
+              shared only with authorized administrators. Anyone with this demo
+              code can create a workspace administrator here.
+            </p>
+            <button type="button" onClick={() => setCode(demoSignupCode)}>
+              Use demo code
+            </button>
+          </div>
         )}
         <fieldset disabled={busy || !options.data?.enabled}>
           <label>
