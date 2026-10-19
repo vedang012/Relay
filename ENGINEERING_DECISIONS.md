@@ -48,6 +48,8 @@ These decisions describe the current Relay implementation. Each entry records th
 
 **Why.** The app needs a production bootstrap path but has no tenant or invitation system. An unrestricted signup endpoint would grant workspace-wide access to anyone.
 
+**Demo signup code.** `vsgJBDLXQoiFbcapPMrowtVQJOpbL0L6jqj9xfZanuKUNtPCu7oq1QcxxP2HiW8m` is intentionally public for this demo. It is configured as the backend `ADMIN_SIGNUP_KEY` and exposed by the frontend `VITE_DEMO_ADMIN_SIGNUP_KEY` so visitors can try `/signup`.
+
 **Consequence.** The deployment operator must protect and rotate a private code. The demo intentionally publishes its signup code through `VITE_DEMO_ADMIN_SIGNUP_KEY` on `/signup`, so anyone with access to that demo can create a workspace administrator. Normal deployments omit that frontend setting and use a different private backend code. This flow does not provide invitations, password recovery, or general self-registration.
 
 ## 7. Keep workflow rules on the server
