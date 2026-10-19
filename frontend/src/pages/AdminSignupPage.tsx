@@ -95,13 +95,12 @@ export function AdminSignupPage() {
             </p>
             <code>{demoSignupCode}</code>
             <p>
-              This code is visible for this demo so visitors can try admin
-              signup. In a normal deployment, the code stays private and is
-              shared only with authorized administrators. Anyone with this demo
-              code can create a workspace administrator here.
+              For this demo, anyone can use this key to sign up as an admin. In
+              production, the key must stay private and be available only to
+              authorized administrators.
             </p>
             <button type="button" onClick={() => setCode(demoSignupCode)}>
-              Use demo code
+              Use demo admin signup key
             </button>
           </div>
         )}
