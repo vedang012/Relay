@@ -35,7 +35,7 @@ You need Docker Compose, Node.js 22.12+, and npm. Run the first commands from th
 
 4. Open **Create an admin account** on the sign-in page. The demo displays its signup code and offers a **Use demo code** button. Create your account and initial team, then sign in. Signup is available only when the backend has a matching `ADMIN_SIGNUP_KEY` of at least 32 characters.
 
-The demo code is public: **any visitor who can see it can create a workspace administrator**. For a normal deployment, use a different private backend key and omit `VITE_DEMO_ADMIN_SIGNUP_KEY` from the frontend build. Set `FRONTEND_ORIGIN` to the deployed frontend URL and `VITE_API_BASE_URL` to the browser-reachable API URL.
+The demo code is public: **any visitor who can see it can create a workspace administrator**. The `relay-two-topaz.vercel.app` demo also shows the code when its frontend environment setting is absent. For a normal deployment, use a different private backend key and omit `VITE_DEMO_ADMIN_SIGNUP_KEY` from the frontend build. Set `FRONTEND_ORIGIN` to the deployed frontend URL and `VITE_API_BASE_URL` to the browser-reachable API URL.
 
 ## Use Relay
 

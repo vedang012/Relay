@@ -4,7 +4,11 @@ import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { Feedback } from "../ui";
 
-const demoSignupCode = import.meta.env.VITE_DEMO_ADMIN_SIGNUP_KEY?.trim();
+const demoSignupCode =
+  import.meta.env.VITE_DEMO_ADMIN_SIGNUP_KEY?.trim() ||
+  (window.location.hostname === "relay-two-topaz.vercel.app"
+    ? "vsgJBDLXQoiFbcapPMrowtVQJOpbL0L6jqj9xfZanuKUNtPCu7oq1QcxxP2HiW8m"
+    : "");
 
 export function AdminSignupPage() {
   const navigate = useNavigate();
