@@ -20,6 +20,7 @@ import {
   Routes,
   useNavigate,
 } from "react-router-dom";
+import { Analytics } from "@vercel/analytics/react";
 import { api, authToken } from "./api";
 import {
   AllWorkPage,
@@ -277,38 +278,45 @@ export default function App() {
     return () => window.removeEventListener("relay:unauthorized", fn);
   }, [qc]);
   return (
-    <Routes>
-      <Route
-        path="/signup"
-        element={
-          loggedIn ? <Navigate to="/attention" replace /> : <AdminSignupPage />
-        }
-      />
-      <Route
-        path="/login"
-        element={
-          loggedIn ? (
-            <Navigate to="/attention" replace />
-          ) : (
-            <Login
-              onLogin={() => {
-                qc.clear();
-                setLoggedIn(true);
-              }}
-            />
-          )
-        }
-      />
-      <Route
-        path="/*"
-        element={
-          loggedIn ? (
-            <Shell onLogout={() => setLoggedIn(false)} />
-          ) : (
-            <Navigate to="/login" replace />
-          )
-        }
-      />
-    </Routes>
+    <>
+      <Routes>
+        <Route
+          path="/signup"
+          element={
+            loggedIn ? (
+              <Navigate to="/attention" replace />
+            ) : (
+              <AdminSignupPage />
+            )
+          }
+        />
+        <Route
+          path="/login"
+          element={
+            loggedIn ? (
+              <Navigate to="/attention" replace />
+            ) : (
+              <Login
+                onLogin={() => {
+                  qc.clear();
+                  setLoggedIn(true);
+                }}
+              />
+            )
+          }
+        />
+        <Route
+          path="/*"
+          element={
+            loggedIn ? (
+              <Shell onLogout={() => setLoggedIn(false)} />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+      </Routes>
+      <Analytics />
+    </>
   );
 }
